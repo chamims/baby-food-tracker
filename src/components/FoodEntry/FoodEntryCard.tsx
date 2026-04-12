@@ -44,9 +44,21 @@ export default function FoodEntryCard({ entry, onDelete }: FoodEntryCardProps) {
 
         <button
           onClick={() => setExpanded(e => !e)}
-          className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0"
+          aria-label={expanded ? 'Collapse details' : 'Expand details'}
+          className="text-gray-400 hover:text-gray-600 p-1 flex-shrink-0 transition-colors"
         >
-          {expanded ? '▲' : '▼'}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              clipRule="evenodd"
+            />
+          </svg>
         </button>
       </div>
 
@@ -99,13 +111,15 @@ export default function FoodEntryCard({ entry, onDelete }: FoodEntryCardProps) {
 
           <div className="pt-2 flex justify-end">
             {confirmDelete ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500">Delete this entry?</span>
-                <button onClick={() => onDelete(entry.id)} className="text-xs text-red-600 font-semibold hover:underline">Yes, delete</button>
-                <button onClick={() => setConfirmDelete(false)} className="text-xs text-gray-400 hover:underline">Cancel</button>
+              <div className="flex items-center justify-between gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 w-full">
+                <span className="text-sm text-red-700 font-medium">Delete this entry?</span>
+                <div className="flex gap-3">
+                  <button onClick={() => onDelete(entry.id)} className="text-sm text-red-600 font-semibold hover:underline">Yes, delete</button>
+                  <button onClick={() => setConfirmDelete(false)} className="text-sm text-gray-500 hover:underline">Cancel</button>
+                </div>
               </div>
             ) : (
-              <button onClick={() => setConfirmDelete(true)} className="text-xs text-red-400 hover:text-red-600 transition-colors">
+              <button onClick={() => setConfirmDelete(true)} className="text-sm text-red-400 hover:text-red-600 transition-colors">
                 Delete entry
               </button>
             )}

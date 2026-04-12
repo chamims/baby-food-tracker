@@ -70,7 +70,7 @@ export default function CalendarView({ entries, onAddEntry, onDeleteEntry, isFir
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div key={format(currentMonth, 'yyyy-MM')} className="grid grid-cols-7 gap-1 animate-slide-in">
         {calDays.map(day => {
           const dateStr = format(day, 'yyyy-MM-dd');
           return (
@@ -97,6 +97,17 @@ export default function CalendarView({ entries, onAddEntry, onDeleteEntry, isFir
         <span>🥩 Protein</span>
         <span>🥛 Dairy</span>
       </div>
+
+      {/* Onboarding empty state */}
+      {entries.length === 0 && (
+        <div className="card bg-sage-50 border-sage-200 text-center py-6">
+          <p className="text-4xl mb-2">🌱</p>
+          <p className="font-semibold text-sage-700 text-base">Welcome! Start tracking Baby's food journey.</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Tap any day on the calendar, or use the <span className="font-semibold">+</span> button below to log your first food.
+          </p>
+        </div>
+      )}
 
       {/* Selected day detail */}
       {selectedDate && (
@@ -133,8 +144,8 @@ export default function CalendarView({ entries, onAddEntry, onDeleteEntry, isFir
       {!selectedDate && (
         <button
           onClick={() => handleAddForDate(format(new Date(), 'yyyy-MM-dd'))}
-          className="fixed bottom-24 right-4 w-14 h-14 bg-sage-500 hover:bg-sage-600 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-20"
-          aria-label="Add food entry"
+          className="fixed bottom-28 right-4 w-14 h-14 bg-sage-500 hover:bg-sage-600 active:bg-sage-700 text-white rounded-full shadow-lg flex items-center justify-center text-2xl transition-colors z-20"
+          aria-label="Add food entry for today"
         >
           +
         </button>

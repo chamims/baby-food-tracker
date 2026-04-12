@@ -74,6 +74,12 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
 
   const STEPS: Step[] = ['food', 'details', 'reaction', 'notes'];
   const stepIdx = STEPS.indexOf(step);
+  const STEP_LABELS: Record<Step, string> = {
+    food: 'What food?',
+    details: 'Details',
+    reaction: 'Reactions',
+    notes: 'Notes & Review',
+  };
   const canGoNext = step === 'food' ? foodName.trim().length > 0 : true;
 
   const goNext = () => {
@@ -111,6 +117,9 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
             />
           ))}
         </div>
+        <p className="px-4 pt-1 text-xs text-gray-400 font-medium">
+          Step {stepIdx + 1} of {STEPS.length} — {STEP_LABELS[step]}
+        </p>
 
         <div className="p-4 space-y-5">
           {/* STEP 1: Food name + category */}

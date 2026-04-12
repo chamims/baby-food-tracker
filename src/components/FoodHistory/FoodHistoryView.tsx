@@ -60,7 +60,15 @@ export default function FoodHistoryView({ entries, onDeleteEntry }: FoodHistoryV
     <div className="flex flex-col gap-4">
       {/* Search */}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+          aria-hidden="true"
+        >
+          <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+        </svg>
         <input
           type="text"
           value={search}
@@ -73,25 +81,28 @@ export default function FoodHistoryView({ entries, onDeleteEntry }: FoodHistoryV
       {/* Filters */}
       <div className="flex flex-col gap-2">
         {/* Category filter */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            onClick={() => setFilterCategory('all')}
-            className={`chip px-3 py-1.5 flex-shrink-0 border transition-all ${filterCategory === 'all' ? 'bg-sage-100 text-sage-700 border-sage-300' : 'bg-white text-gray-500 border-gray-200'}`}
-          >
-            All
-          </button>
-          {FOOD_CATEGORIES.map(cat => (
+        <div className="relative">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none pr-6">
             <button
-              key={cat.id}
-              onClick={() => setFilterCategory(cat.id)}
-              className={`chip px-3 py-1.5 flex-shrink-0 border transition-all ${filterCategory === cat.id ? `${cat.color} border-current` : 'bg-white text-gray-500 border-gray-200'}`}
+              onClick={() => setFilterCategory('all')}
+              className={`chip px-3 py-1.5 flex-shrink-0 border transition-all ${filterCategory === 'all' ? 'bg-sage-100 text-sage-700 border-sage-300' : 'bg-white text-gray-500 border-gray-200'}`}
             >
-              {cat.emoji} {cat.label}
+              All
             </button>
-          ))}
+            {FOOD_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setFilterCategory(cat.id)}
+                className={`chip px-3 py-1.5 flex-shrink-0 border transition-all ${filterCategory === cat.id ? `${cat.color} border-current` : 'bg-white text-gray-500 border-gray-200'}`}
+              >
+                {cat.emoji} {cat.label}
+              </button>
+            ))}
+          </div>
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-sage-50 to-transparent" />
         </div>
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as SortBy)}
@@ -119,12 +130,22 @@ export default function FoodHistoryView({ entries, onDeleteEntry }: FoodHistoryV
           >
             ⭐ First tries only
           </button>
+
+          {(search.trim() !== '' || filterCategory !== 'all' || filterReaction !== 'all' || showOnlyFirst) && (
+            <button
+              onClick={() => { setSearch(''); setFilterCategory('all'); setFilterReaction('all'); setShowOnlyFirst(false); }}
+              className="text-sm px-3 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-all ml-auto"
+            >
+              Clear all
+            </button>
+          )}
         </div>
       </div>
 
       {/* Summary */}
-      <p className="text-xs text-gray-400">
-        {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'} · {uniqueFoodCount} unique foods tried
+      <p className="text-sm text-gray-500 font-medium">
+        {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'}
+        <span className="text-gray-400 font-normal"> · {uniqueFoodCount} unique foods tried</span>
       </p>
 
       {/* Results */}

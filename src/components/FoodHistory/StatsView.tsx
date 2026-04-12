@@ -137,9 +137,26 @@ export default function StatsView({ entries }: StatsViewProps) {
         </div>
       )}
 
+      {/* Top foods by frequency */}
+      {stats.topFoods.length > 0 && (
+        <div className="card">
+          <h3 className="font-semibold text-gray-700 mb-3">🍽️ Most Frequently Given</h3>
+          <div className="space-y-1.5">
+            {stats.topFoods.map(([name, count], i) => (
+              <div key={name} className="flex items-center justify-between">
+                <span className="text-sm text-gray-700 capitalize">
+                  <span className="text-gray-400 mr-1.5">{i + 1}.</span>{name}
+                </span>
+                <span className="chip bg-sage-100 text-sage-700">{count}× given</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Allergen foods */}
       {stats.allergenFoods.length > 0 && (
-        <div className="card border-amber-200">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-sm">
           <h3 className="font-semibold text-amber-700 mb-3">⚠️ Allergen Foods Tried</h3>
           <div className="flex flex-wrap gap-1.5">
             {Array.from(new Set(stats.allergenFoods.flatMap(e => e.allergens))).map(id => {

@@ -22,7 +22,7 @@ export default function DayCell({ date, dayNumber, isToday, isCurrentMonth, entr
     <button
       onClick={() => onClick(date)}
       className={`
-        relative p-1.5 min-h-[64px] rounded-xl text-left transition-all border
+        relative p-1.5 min-h-[72px] rounded-xl text-left transition-all border
         ${isCurrentMonth ? 'text-gray-800' : 'text-gray-300'}
         ${isToday ? 'border-sage-400 bg-sage-50' : 'border-transparent hover:border-sage-200 hover:bg-sage-50/50'}
         ${entries.length > 0 ? 'cursor-pointer' : 'cursor-default'}
