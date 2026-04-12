@@ -121,9 +121,10 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
       if (result) {
         if (result.foodName) {
           setFoodName(result.foodName);
-          setAiSuggestedCategory(false);
-          setAiSuggestedAllergens(false);
+          setSuggestions([]); // prevent dropdown opening over the auto-filled name
         }
+        setAiSuggestedCategory(false);
+        setAiSuggestedAllergens(false);
         setCategory(result.category);
         setAiSuggestedCategory(true);
         if (result.allergens.length > 0) {

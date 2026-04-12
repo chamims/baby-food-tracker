@@ -88,12 +88,12 @@ export type ImageAnalysis = {
 };
 
 const ANALYZE_IMAGE_PROMPT =
-  `You are a baby food assistant looking at a photo of food or a baby food label. Identify what food is shown.
+  `You are a baby food assistant. Identify the food shown in this photo or on this food label.
 
 Respond with ONLY a valid JSON object — no explanation, no markdown, no code fences:
 
 {
-  "foodName": "<common name of the food, capitalized, e.g. Sweet potato>",
+  "foodName": "<the primary food name, capitalized, e.g. Sweet potato — always provide your best guess even if uncertain>",
   "category": "<one of: fruits | vegetables | grains | proteins | dairy | other>",
   "allergens": ["<zero or more of: milk, eggs, fish, shellfish, tree_nuts, peanuts, wheat, soybeans, sesame>"],
   "notes": "<one short sentence describing what you see>"
@@ -101,8 +101,8 @@ Respond with ONLY a valid JSON object — no explanation, no markdown, no code f
 
 Rules:
 - allergens must only contain IDs from the exact list above
-- foodName should be the primary ingredient if multiple items are visible
-- If the image is unclear or not food, set foodName to empty string and category to "other"`;
+- foodName should be your best guess at the primary ingredient — only leave empty if absolutely no food is visible at all
+- If reading a label, use the product's main food ingredient as the name`;
 
 export async function analyzeFoodImage(
   base64: string,
