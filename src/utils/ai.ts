@@ -111,8 +111,8 @@ export async function analyzeFoodImage(
   if (!AI_ENABLED) return null;
   try {
     const message = await getClient().messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 256,
+      model: 'claude-sonnet-4-6',  // Sonnet for better vision accuracy
+      max_tokens: 1024,
       messages: [{
         role: 'user',
         content: [
@@ -123,7 +123,8 @@ export async function analyzeFoodImage(
     });
     const text = (message.content[0] as { type: 'text'; text: string }).text;
     return parseJson<ImageAnalysis>(text);
-  } catch {
+  } catch (err) {
+    console.error('[analyzeFoodImage] failed:', err);
     return null;
   }
 }

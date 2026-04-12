@@ -60,6 +60,7 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
   const [photoLoading, setPhotoLoading] = useState(false);
   const [photoAnalysis, setPhotoAnalysis] = useState('');
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const aiDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -93,6 +94,7 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
 
   const handleFoodNameChange = (value: string) => {
     setFoodName(value);
+    setPhotoError(null);
     setAiSuggestedCategory(false);
     setAiSuggestedAllergens(false);
     if (AI_ENABLED) {
@@ -115,13 +117,19 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
         : 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
 
       setPhotoLoading(true);
+      setPhotoError(null);
       const result = await analyzeFoodImage(base64, mimeType);
       setPhotoLoading(false);
 
-      if (result) {
+      if (!result) {
+        setPhotoError('Photo analysis failed — please type the food name manually.');
+      } else {
         if (result.foodName) {
           setFoodName(result.foodName);
-          setSuggestions([]); // prevent dropdown opening over the auto-filled name
+          setSuggestions([]);
+          setPhotoError(null);
+        } else {
+          setPhotoError("Couldn't detect the food name — please type it manually.");
         }
         setAiSuggestedCategory(false);
         setAiSuggestedAllergens(false);
@@ -132,7 +140,6 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
           setAiSuggestedAllergens(true);
         }
         if (result.notes) setPhotoAnalysis(result.notes);
-        // Fetch nutrition for the detected food name
         if (result.foodName && AI_ENABLED) {
           await triggerAiAnalysis(result.foodName);
         }
@@ -308,13 +315,18 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
                       </div>
                     )}
                     <button
-                      onClick={() => { setPhotoPreviewUrl(null); setPhotoAnalysis(''); }}
+                      onClick={() => { setPhotoPreviewUrl(null); setPhotoAnalysis(''); setPhotoError(null); }}
                       className="absolute -top-1.5 -right-1.5 bg-gray-200 hover:bg-gray-300 rounded-full w-5 h-5 flex items-center justify-center text-xs text-gray-600"
                       aria-label="Remove photo"
                     >
                       ×
                     </button>
                   </div>
+                )}
+
+                {/* Photo error / hint */}
+                {photoError && (
+                  <p className="text-xs text-amber-600 mt-1.5">{photoError}</p>
                 )}
 
                 {isFirstTry && foodName.trim() && (
