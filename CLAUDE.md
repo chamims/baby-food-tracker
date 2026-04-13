@@ -6,7 +6,7 @@ A mobile-first web app for parents tracking solid food introductions during thei
 - **Frontend:** React 18 + TypeScript + Vite
 - **Styling:** Tailwind CSS (custom sage/peach color palette)
 - **Data:** localStorage (key: `baby-food-tracker-entries`) — Phase 3 migrates to Supabase
-- **AI:** `@anthropic-ai/sdk` — food analysis + photo recognition via Claude (gated behind `VITE_ANTHROPIC_API_KEY`)
+- **AI:** `@google/generative-ai` — food analysis + photo recognition via Gemini 1.5 Flash (gated behind `VITE_GOOGLE_AI_API_KEY`; free tier: 1,500 req/day)
 - **Utilities:** date-fns (date math), uuid (ID generation)
 
 ## Running the App
@@ -114,7 +114,7 @@ Colors defined in `tailwind.config.js`:
 - When adding new food categories or allergens, update `src/utils/constants.ts` only — components read from there.
 - localStorage data format is `FoodEntry[]` — migrations needed when schema changes.
 - Do not add a backend until Phase 3; localStorage is intentional for Phase 1/2.
-- AI features are entirely opt-in via `AI_ENABLED` — app works fully without an API key.
+- AI features are entirely opt-in via `AI_ENABLED` — app works fully without an API key. AI uses Gemini 1.5 Flash (`VITE_GOOGLE_AI_API_KEY`) with a free tier of 1,500 req/day.
 - `updateEntry` is already implemented in `useFoodEntries.ts` but not exposed in `App.tsx` — wire it up for the Phase 2 edit feature.
 
 ## Source Tree
