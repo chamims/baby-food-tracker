@@ -77,6 +77,8 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
     }
   }, [foodName]);
 
+  const VALID_ALLERGEN_IDS = ALLERGENS.map(a => a.id as string);
+
   const triggerAiAnalysis = async (name: string) => {
     setAiLoading(true);
     const result = await analyzeFood(name);
@@ -84,8 +86,9 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
     if (result) {
       setCategory(result.category);
       setAiSuggestedCategory(true);
-      if (result.allergens.length > 0) {
-        setSelectedAllergens(result.allergens);
+      const validAllergens = result.allergens.filter(id => VALID_ALLERGEN_IDS.includes(id));
+      if (validAllergens.length > 0) {
+        setSelectedAllergens(validAllergens);
         setAiSuggestedAllergens(true);
       }
       setNutrition(result.nutrition);
@@ -135,8 +138,9 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
         setAiSuggestedAllergens(false);
         setCategory(result.category);
         setAiSuggestedCategory(true);
-        if (result.allergens.length > 0) {
-          setSelectedAllergens(result.allergens);
+        const validPhotoAllergens = result.allergens.filter(id => VALID_ALLERGEN_IDS.includes(id));
+        if (validPhotoAllergens.length > 0) {
+          setSelectedAllergens(validPhotoAllergens);
           setAiSuggestedAllergens(true);
         }
         if (result.notes) setPhotoAnalysis(result.notes);
