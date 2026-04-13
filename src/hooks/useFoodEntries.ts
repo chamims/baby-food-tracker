@@ -1,10 +1,37 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import type { FoodEntry } from '../types';
 import { loadEntries, saveEntries } from '../utils/storage';
+import {
+  SUPABASE_ENABLED,
+  dbLoadEntries,
+  dbInsertEntry,
+  dbUpdateEntry,
+  dbDeleteEntry,
+} from '../utils/supabase';
 
 export function useFoodEntries() {
-  const [entries, setEntries] = useState<FoodEntry[]>(() => loadEntries());
+  // When Supabase is enabled, start with an empty list and load from DB.
+  // Otherwise, hydrate immediately from localStorage.
+  const [entries, setEntries] = useState<FoodEntry[]>(() =>
+    SUPABASE_ENABLED ? [] : loadEntries()
+  );
+  const [syncing, setSyncing] = useState(SUPABASE_ENABLED);
+
+  // On mount: load from Supabase (when enabled), fall back to localStorage on error.
+  useEffect(() => {
+    if (!SUPABASE_ENABLED) return;
+    dbLoadEntries()
+      .then((data) => {
+        setEntries(data);
+        saveEntries(data); // keep localStorage in sync as offline cache
+      })
+      .catch((err) => {
+        console.error('Failed to load from Supabase, falling back to localStorage:', err);
+        setEntries(loadEntries());
+      })
+      .finally(() => setSyncing(false));
+  }, []);
 
   const addEntry = useCallback((entry: Omit<FoodEntry, 'id' | 'createdAt'>) => {
     const newEntry: FoodEntry = {
@@ -17,6 +44,11 @@ export function useFoodEntries() {
       saveEntries(updated);
       return updated;
     });
+    if (SUPABASE_ENABLED) {
+      dbInsertEntry(newEntry).catch(err =>
+        console.error('Supabase insert failed:', err)
+      );
+    }
     return newEntry;
   }, []);
 
@@ -26,6 +58,11 @@ export function useFoodEntries() {
       saveEntries(updated);
       return updated;
     });
+    if (SUPABASE_ENABLED) {
+      dbUpdateEntry(id, updates).catch(err =>
+        console.error('Supabase update failed:', err)
+      );
+    }
   }, []);
 
   const deleteEntry = useCallback((id: string) => {
@@ -34,6 +71,11 @@ export function useFoodEntries() {
       saveEntries(updated);
       return updated;
     });
+    if (SUPABASE_ENABLED) {
+      dbDeleteEntry(id).catch(err =>
+        console.error('Supabase delete failed:', err)
+      );
+    }
   }, []);
 
   const getEntriesForDate = useCallback((date: string) => {
@@ -58,6 +100,7 @@ export function useFoodEntries() {
 
   return {
     entries,
+    syncing,
     addEntry,
     updateEntry,
     deleteEntry,
