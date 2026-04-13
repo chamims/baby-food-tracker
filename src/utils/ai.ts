@@ -70,7 +70,7 @@ function parseJson<T>(text: string): T {
 export async function analyzeFood(foodName: string): Promise<FoodAnalysis | null> {
   if (!AI_ENABLED) return null;
   try {
-    const model = getClient().getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = getClient().getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent(ANALYZE_FOOD_PROMPT(foodName));
     return parseJson<FoodAnalysis>(result.response.text());
   } catch {
@@ -110,7 +110,7 @@ export async function analyzeFoodImage(
 ): Promise<ImageAnalysis | null> {
   if (!AI_ENABLED) return null;
   try {
-    const model = getClient().getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = getClient().getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent([
       { inlineData: { data: base64, mimeType } },
       ANALYZE_IMAGE_PROMPT,
