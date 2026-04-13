@@ -109,47 +109,69 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
   };
 
   const handlePhotoCapture = async (file: File) => {
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      const dataUrl = evt.target?.result as string;
-      setPhotoPreviewUrl(dataUrl);
-      const [meta, base64] = dataUrl.split(',');
-      const rawMime = meta.match(/:(.*?);/)?.[1] ?? 'image/jpeg';
-      const mimeType = (['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(rawMime)
-        ? rawMime
-        : 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
+    setPhotoLoading(true);
+    setPhotoError(null);
 
-      setPhotoLoading(true);
-      setPhotoError(null);
-      const result = await analyzeFoodImage(base64, mimeType);
-      setPhotoLoading(false);
-
-      if (!result) {
-        setPhotoError('Photo analysis failed — please type the food name manually.');
-      } else {
-        if (result.foodName) {
-          setFoodName(result.foodName);
-          setSuggestions([]);
-          setPhotoError(null);
-        } else {
-          setPhotoError("Couldn't detect the food name — please type it manually.");
-        }
-        setAiSuggestedCategory(false);
-        setAiSuggestedAllergens(false);
-        setCategory(result.category);
-        setAiSuggestedCategory(true);
-        const validPhotoAllergens = result.allergens.filter(id => VALID_ALLERGEN_IDS.includes(id));
-        if (validPhotoAllergens.length > 0) {
-          setSelectedAllergens(validPhotoAllergens);
-          setAiSuggestedAllergens(true);
-        }
-        if (result.notes) setPhotoAnalysis(result.notes);
-        if (result.foodName && AI_ENABLED) {
-          await triggerAiAnalysis(result.foodName);
-        }
+    // Resize via canvas — phone photos can be 5–10MB which exceeds the API limit.
+    // Canvas resize gets the image down to ≤1024px / ~200KB before sending.
+    const resized = await new Promise<{ previewUrl: string; base64: string; mimeType: 'image/jpeg' }>(
+      (resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          const MAX = 1024;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            if (width > height) { height = Math.round(height * MAX / width); width = MAX; }
+            else { width = Math.round(width * MAX / height); height = MAX; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          resolve({ previewUrl: dataUrl, base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+        };
+        img.onerror = reject;
+        img.src = objectUrl;
       }
-    };
-    reader.readAsDataURL(file);
+    ).catch(() => null);
+
+    if (!resized) {
+      setPhotoLoading(false);
+      setPhotoError('Could not read image — please try again.');
+      return;
+    }
+
+    setPhotoPreviewUrl(resized.previewUrl);
+    const result = await analyzeFoodImage(resized.base64, resized.mimeType);
+    setPhotoLoading(false);
+
+    if (!result) {
+      setPhotoError('Photo analysis failed — please type the food name manually.');
+    } else {
+      if (result.foodName) {
+        setFoodName(result.foodName);
+        setSuggestions([]);
+        setPhotoError(null);
+      } else {
+        setPhotoError("Couldn't detect the food name — please type it manually.");
+      }
+      setAiSuggestedCategory(false);
+      setAiSuggestedAllergens(false);
+      setCategory(result.category);
+      setAiSuggestedCategory(true);
+      const validPhotoAllergens = result.allergens.filter(id => VALID_ALLERGEN_IDS.includes(id));
+      if (validPhotoAllergens.length > 0) {
+        setSelectedAllergens(validPhotoAllergens);
+        setAiSuggestedAllergens(true);
+      }
+      if (result.notes) setPhotoAnalysis(result.notes);
+      if (result.foodName && AI_ENABLED) {
+        await triggerAiAnalysis(result.foodName);
+      }
+    }
   };
 
   const toggleAllergen = (id: string) => {
