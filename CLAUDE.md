@@ -116,3 +116,6 @@ Colors defined in `tailwind.config.js`:
 - Do not add a backend until Phase 3; localStorage is intentional for Phase 1/2.
 - AI features are entirely opt-in via `AI_ENABLED` — app works fully without an API key.
 - `updateEntry` is already implemented in `useFoodEntries.ts` but not exposed in `App.tsx` — wire it up for the Phase 2 edit feature.
+
+## Source Tree
+@src/CLAUDE.md
