@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import type { View } from './types';
 import { useFoodEntries } from './hooks/useFoodEntries';
 import Header from './components/Layout/Header';
@@ -45,6 +46,7 @@ export default function App() {
       </main>
 
       <Navigation view={view} onViewChange={setView} />
+      <Analytics />
     </div>
   );
 }
