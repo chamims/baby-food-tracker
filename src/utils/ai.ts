@@ -1,13 +1,13 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 import type { FoodCategory, TimeOfDay } from '../types';
 
-const API_KEY = import.meta.env.VITE_GOOGLE_AI_API_KEY as string | undefined;
+const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined;
 export const AI_ENABLED = Boolean(API_KEY);
 
-let _client: GoogleGenerativeAI | null = null;
-function getClient(): GoogleGenerativeAI {
+let _client: Anthropic | null = null;
+function getClient(): Anthropic {
   if (!_client) {
-    _client = new GoogleGenerativeAI(API_KEY!);
+    _client = new Anthropic({ apiKey: API_KEY!, dangerouslyAllowBrowser: true });
   }
   return _client;
 }
@@ -70,9 +70,13 @@ function parseJson<T>(text: string): T {
 export async function analyzeFood(foodName: string): Promise<FoodAnalysis | null> {
   if (!AI_ENABLED) return null;
   try {
-    const model = getClient().getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
-    const result = await model.generateContent(ANALYZE_FOOD_PROMPT(foodName));
-    return parseJson<FoodAnalysis>(result.response.text());
+    const message = await getClient().messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 256,
+      messages: [{ role: 'user', content: ANALYZE_FOOD_PROMPT(foodName) }],
+    });
+    const text = (message.content[0] as { type: 'text'; text: string }).text;
+    return parseJson<FoodAnalysis>(text);
   } catch {
     return null;
   }
@@ -110,29 +114,40 @@ export async function analyzeFoodImage(
 ): Promise<ImageAnalysis | null> {
   if (!AI_ENABLED) return null;
   try {
-    const model = getClient().getGenerativeModel({ model: 'gemini-1.5-flash-8b' });
-    const result = await model.generateContent([
-      { inlineData: { data: base64, mimeType } },
-      ANALYZE_IMAGE_PROMPT,
-    ]);
-    const text = result.response.text();
-    const parsed = parseJson<ImageAnalysis>(text);
+    const message = await getClient().messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 512,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } },
+          { type: 'text', text: ANALYZE_IMAGE_PROMPT },
+        ],
+      }],
+    });
+    const text = (message.content[0] as { type: 'text'; text: string }).text;
+    const result = parseJson<ImageAnalysis>(text);
 
     // Fallback: if vision pass returned no food name but wrote a description,
-    // ask the model to extract the name from that description.
-    if (!parsed.foodName && parsed.notes) {
+    // ask the text model to extract the name from that description.
+    if (!result.foodName && result.notes) {
       try {
-        const fallback = await model.generateContent(
-          `Food description: "${parsed.notes}"\n\nWhat is the primary food item? Reply with ONLY the food name, 1–3 words, capitalized. Example: "Banana" or "Sweet potato".`
-        );
-        const name = fallback.response.text().trim();
-        if (name) parsed.foodName = name;
+        const fallback = await getClient().messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 32,
+          messages: [{
+            role: 'user',
+            content: `Food description: "${result.notes}"\n\nWhat is the primary food item? Reply with ONLY the food name, 1–3 words, capitalized. Example: "Banana" or "Sweet potato".`,
+          }],
+        });
+        const name = (fallback.content[0] as { type: 'text'; text: string }).text.trim();
+        if (name) result.foodName = name;
       } catch {
         // fallback failed — foodName stays empty, caller will show hint
       }
     }
 
-    return parsed;
+    return result;
   } catch (err) {
     console.error('[analyzeFoodImage] failed:', err);
     return null;
