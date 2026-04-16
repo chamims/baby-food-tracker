@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Session } from '@supabase/supabase-js';
+export type { Session };
 import type { FoodEntry } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -38,6 +40,7 @@ interface DbRow {
     fiber: number;
   } | null;
   photo_analysis: string | null;
+  household_id: string;
 }
 
 function rowToEntry(row: DbRow): FoodEntry {
@@ -63,7 +66,7 @@ function rowToEntry(row: DbRow): FoodEntry {
   };
 }
 
-function entryToRow(entry: FoodEntry): DbRow {
+function entryToRow(entry: FoodEntry, householdId: string): DbRow {
   return {
     id: entry.id,
     date: entry.date,
@@ -83,6 +86,7 @@ function entryToRow(entry: FoodEntry): DbRow {
     feeding_time: entry.feedingTime ?? null,
     nutrition: entry.nutrition ?? null,
     photo_analysis: entry.photoAnalysis ?? null,
+    household_id: householdId,
   };
 }
 
@@ -121,9 +125,9 @@ export async function dbLoadEntries(): Promise<FoodEntry[]> {
   return (data as DbRow[]).map(rowToEntry);
 }
 
-export async function dbInsertEntry(entry: FoodEntry): Promise<void> {
+export async function dbInsertEntry(entry: FoodEntry, householdId: string): Promise<void> {
   if (!supabase) return;
-  const { error } = await supabase.from('food_entries').insert(entryToRow(entry));
+  const { error } = await supabase.from('food_entries').insert(entryToRow(entry, householdId));
   if (error) throw error;
 }
 
@@ -142,12 +146,73 @@ export async function dbDeleteEntry(id: string): Promise<void> {
   if (error) throw error;
 }
 
-export async function dbUpsertEntries(entries: FoodEntry[]): Promise<number> {
+export async function dbUpsertEntries(entries: FoodEntry[], householdId: string): Promise<number> {
   if (!supabase || entries.length === 0) return 0;
-  const rows = entries.map(entryToRow);
+  const rows = entries.map(e => entryToRow(e, householdId));
   const { error, count } = await supabase
     .from('food_entries')
     .upsert(rows, { onConflict: 'id', count: 'exact' });
   if (error) throw error;
   return count ?? rows.length;
+}
+
+// ---------------------------------------------------------------------------
+// Auth helpers
+// ---------------------------------------------------------------------------
+
+export async function getSession(): Promise<Session | null> {
+  if (!supabase) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
+}
+
+export async function signInWithOtp(email: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.auth.signInWithOtp({ email });
+  if (error) throw error;
+}
+
+export async function signOutFromSupabase(): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+export function onAuthStateChange(callback: (session: Session | null) => void): () => void {
+  if (!supabase) return () => {};
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    callback(session);
+  });
+  return () => subscription.unsubscribe();
+}
+
+// ---------------------------------------------------------------------------
+// Household helpers
+// ---------------------------------------------------------------------------
+
+export async function dbGetHousehold(): Promise<{ id: string } | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('household_members')
+    .select('household_id')
+    .limit(1)
+    .single();
+  if (error) return null;
+  return { id: (data as { household_id: string }).household_id };
+}
+
+export async function dbCreateHousehold(userId: string): Promise<string> {
+  if (!supabase) throw new Error('Supabase not enabled');
+  const { data: household, error: hErr } = await supabase
+    .from('households')
+    .insert({ owner_user_id: userId })
+    .select('id')
+    .single();
+  if (hErr) throw hErr;
+  const householdId = (household as { id: string }).id;
+  const { error: mErr } = await supabase
+    .from('household_members')
+    .insert({ household_id: householdId, user_id: userId, role: 'owner' });
+  if (mErr) throw mErr;
+  return householdId;
 }
