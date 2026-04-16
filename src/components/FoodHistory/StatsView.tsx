@@ -2,14 +2,15 @@ import { useMemo, useRef, useState } from 'react';
 import type { FoodEntry } from '../../types';
 import { FOOD_CATEGORIES, ENJOYMENT_LEVELS, ALLERGENS } from '../../utils/constants';
 import { importData } from '../../utils/storage';
-import { SUPABASE_ENABLED, dbUpsertEntries } from '../../utils/supabase';
+import { SUPABASE_ENABLED } from '../../utils/supabase';
 
 interface StatsViewProps {
   entries: FoodEntry[];
   onImport: (entries: FoodEntry[]) => void;
+  onSyncToCloud?: () => Promise<number>;
 }
 
-export default function StatsView({ entries, onImport }: StatsViewProps) {
+export default function StatsView({ entries, onImport, onSyncToCloud }: StatsViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState('');
 
@@ -77,6 +78,26 @@ export default function StatsView({ entries, onImport }: StatsViewProps) {
             <button onClick={() => handleExport()} className="btn-secondary flex-1 text-sm">Export JSON</button>
             <button onClick={() => fileInputRef.current?.click()} className="btn-secondary flex-1 text-sm">Import JSON</button>
           </div>
+          {SUPABASE_ENABLED && onSyncToCloud && (
+            <button
+              onClick={async () => {
+                setSyncing(true);
+                setSyncStatus('');
+                try {
+                  const count = await onSyncToCloud();
+                  setSyncStatus(`Synced ${count} entries to cloud ✓`);
+                } catch {
+                  setSyncStatus('Sync failed — check connection');
+                } finally {
+                  setSyncing(false);
+                }
+              }}
+              disabled={syncing || entries.length === 0}
+              className="btn-secondary w-full text-sm mt-2 disabled:opacity-50"
+            >
+              {syncing ? 'Syncing…' : 'Sync to Cloud ☁️'}
+            </button>
+          )}
           <input
             ref={fileInputRef}
             type="file"
@@ -97,6 +118,11 @@ export default function StatsView({ entries, onImport }: StatsViewProps) {
           />
           {importStatus && (
             <p className={`text-xs mt-2 ${importStatus.includes('failed') ? 'text-red-500' : 'text-sage-600'}`}>{importStatus}</p>
+          )}
+          {syncStatus && (
+            <p className={`text-xs mt-2 ${syncStatus.includes('failed') ? 'text-red-500' : 'text-sage-600'}`}>
+              {syncStatus}
+            </p>
           )}
         </div>
       </div>
@@ -235,13 +261,13 @@ export default function StatsView({ entries, onImport }: StatsViewProps) {
             Import JSON
           </button>
         </div>
-        {SUPABASE_ENABLED && (
+        {SUPABASE_ENABLED && onSyncToCloud && (
           <button
             onClick={async () => {
               setSyncing(true);
               setSyncStatus('');
               try {
-                const count = await dbUpsertEntries(entries);
+                const count = await onSyncToCloud();
                 setSyncStatus(`Synced ${count} entries to cloud ✓`);
               } catch {
                 setSyncStatus('Sync failed — check connection');
