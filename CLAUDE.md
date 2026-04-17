@@ -5,7 +5,7 @@ A mobile-first web app for parents tracking solid food introductions during thei
 ## Tech Stack
 - **Frontend:** React 18 + TypeScript + Vite
 - **Styling:** Tailwind CSS (custom sage/peach color palette)
-- **Data:** localStorage (key: `baby-food-tracker-entries`) — Phase 3 migrates to Supabase
+- **Data:** Supabase (Phase 3 chunk 1+2 shipped); localStorage (`baby-food-tracker-entries`) remains as offline fallback / pre-auth cache
 - **AI:** `@anthropic-ai/sdk` — food analysis + photo recognition via Claude (gated behind `VITE_ANTHROPIC_API_KEY`)
 - **Utilities:** date-fns (date math), uuid (ID generation)
 
@@ -86,20 +86,23 @@ All lookup data (allergens, symptoms, categories, etc.) lives in `src/utils/cons
 - [ ] Export/Import UI buttons (functions already in `src/utils/storage.ts`)
 - [ ] Weekly summary / push notifications (needs backend)
 
-### Phase 3 — PLANNED 📋 (Supabase)
+### Phase 3 — IN PROGRESS 🔄 (Supabase)
 
-**Goal:** Replace localStorage with Supabase so data persists across devices.
+**Goal:** Replace localStorage with Supabase so data persists across devices; add auth + household sharing + realtime for multi-person family use.
 
-**Setup (user, one-time):**
-1. Create free Supabase project → run SQL schema (see plan file)
-2. Add `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` to Vercel env vars
+**Shipped:**
+- [x] **Chunk 1** (commit `e23268b`) — Supabase data layer: `food_entries` table, typed CRUD helpers in `src/utils/supabase.ts`, `useFoodEntries` loads from Supabase with optimistic writes, "Sync to Cloud" bulk migration button in StatsView. Currently running on permissive `anon_all` RLS policy.
+- [x] **Chunk 2** (commit `910c2b2`) — Sync UX polish: loading spinner on mount, error toasts via `onSyncError` callback, `importEntries()` replaces the `window.location.reload()` hack, cloud icon (☁️) in Header, Export pulls from in-memory `entries` prop.
 
-**Code changes:**
-- New `src/utils/supabase.ts` — typed query helpers wrapping `@supabase/supabase-js`
-- Update `src/hooks/useFoodEntries.ts` — replace localStorage with Supabase calls, keep localStorage as offline fallback
-- Migration path: export existing data via `storage.ts` `exportData()`, re-import to Supabase
+**Planned (design approved — see [`docs/superpowers/specs/2026-04-16-phase3-chunks-3-and-4-design.md`](docs/superpowers/specs/2026-04-16-phase3-chunks-3-and-4-design.md)):**
+- [ ] **Chunk 3 — Auth Foundation:** Magic-link auth via Supabase Auth; new `households` + `household_members` tables; `household_id` added to `food_entries`; RLS locked down to household membership; one-time SQL attaches existing rows to owner's household. `SignInView` + sign-out in Settings. End of chunk 3: app works for owner alone with real auth; `anon_all` policy gone.
+- [ ] **Chunk 4 — Collaboration:** Email invites (owner types invitee email → Edge Function generates 6-char code + emails it via Resend → invitee signs in via magic link → `JoinHouseholdView` redeems code via `redeem_invite(code)` security-definer postgres function). Supabase Realtime subscriptions on `food_entries` for live sync between household members. Members / Invites / Leave-household UI in Settings.
 
-**Phase 3b (later):** Add Supabase Auth (Google/email) + row-level security for family sharing.
+**Setup (user, before chunk 4):**
+- Resend account + `RESEND_API_KEY` Edge Function secret (`supabase secrets set RESEND_API_KEY=...`)
+- `APP_URL` secret so the invite email link goes to the right place
+
+**Phase 4+ (out of scope):** Multi-baby per household, per-user entry attribution, push notifications, offline queue with retry.
 
 ## Design System
 Colors defined in `tailwind.config.js`:
