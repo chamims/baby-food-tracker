@@ -39,8 +39,14 @@ create policy food_entries_delete on food_entries for delete
 
 -- RLS on households
 alter table households enable row level security;
+-- Owner can always see their own household (needed to pass the household_members insert policy).
+-- Without this, the member insert's EXISTS subquery would be filtered by this policy,
+-- creating a circular dependency that blocks the first insert.
 create policy households_select on households for select
-  using (id in (select household_id from household_members where user_id = auth.uid()));
+  using (
+    owner_user_id = auth.uid()
+    or id in (select household_id from household_members where user_id = auth.uid())
+  );
 create policy households_insert on households for insert
   with check (owner_user_id = auth.uid());
 
