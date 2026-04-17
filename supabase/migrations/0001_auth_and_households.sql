@@ -52,10 +52,11 @@ create policy households_insert on households for insert
 
 -- RLS on household_members
 alter table household_members enable row level security;
+-- Chunk 3: user sees only their own membership row.
+-- (Referencing household_members in its own USING clause causes infinite RLS recursion.)
+-- Chunk 4 will add a SECURITY DEFINER function so household-mates can see each other.
 create policy household_members_select on household_members for select
-  using (user_id = auth.uid() or household_id in (
-    select household_id from household_members where user_id = auth.uid()
-  ));
+  using (user_id = auth.uid());
 -- Only a household owner can add themselves as the first member (covers first-login creation).
 -- Chunk 4 invite-based joins use a security-definer function that bypasses this.
 create policy household_members_insert_self_owner on household_members for insert
