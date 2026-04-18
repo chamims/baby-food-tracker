@@ -31,6 +31,7 @@ export const FOOD_CATEGORIES: { id: FoodCategory; label: string; emoji: string; 
   { id: 'grains', label: 'Grains', emoji: '🌾', color: 'bg-yellow-100 text-yellow-700' },
   { id: 'proteins', label: 'Proteins', emoji: '🥩', color: 'bg-rose-100 text-rose-700' },
   { id: 'dairy', label: 'Dairy', emoji: '🥛', color: 'bg-blue-100 text-blue-700' },
+  { id: 'purees', label: 'Purees', emoji: '🥣', color: 'bg-purple-100 text-purple-700' },
   { id: 'other', label: 'Other', emoji: '🍽️', color: 'bg-gray-100 text-gray-700' },
 ];
 

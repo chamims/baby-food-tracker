@@ -179,6 +179,9 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
       setAiSuggestedAllergens(false);
       setCategory(result.category);
       setAiSuggestedCategory(true);
+      if (TEXTURES.some(t => t.id === result.texture)) {
+        setTexture(result.texture);
+      }
       const validPhotoAllergens = result.allergens.filter(id => VALID_ALLERGEN_IDS.includes(id));
       if (validPhotoAllergens.length > 0) {
         setSelectedAllergens(validPhotoAllergens);

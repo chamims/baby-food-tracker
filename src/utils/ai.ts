@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { FoodCategory, TimeOfDay } from '../types';
+import type { FoodCategory, Texture, TimeOfDay } from '../types';
 
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY as string | undefined;
 export const AI_ENABLED = Boolean(API_KEY);
@@ -42,7 +42,7 @@ const ANALYZE_FOOD_PROMPT = (foodName: string) =>
 Respond with ONLY a valid JSON object — no explanation, no markdown, no code fences. Use exactly this schema:
 
 {
-  "category": "<one of: fruits | vegetables | grains | proteins | dairy | other>",
+  "category": "<one of: fruits | vegetables | grains | proteins | dairy | purees | other>",
   "allergens": ["<zero or more of: milk, eggs, fish, shellfish, tree_nuts, peanuts, wheat, soybeans, sesame>"],
   "nutrition": {
     "calories": <number per 100g>,
@@ -56,6 +56,7 @@ Respond with ONLY a valid JSON object — no explanation, no markdown, no code f
 Rules:
 - allergens must only contain IDs from the exact list above
 - nutrition values are per 100g, rounded to one decimal place
+- use "purees" only when the food name clearly refers to a multi-ingredient baby food pouch/jar (e.g. brand names like "Plum Organics", phrases like "baby food pouch" or "veggie blend"); for single ingredients pick the underlying category even if served pureed
 - if the food is unknown or ambiguous, use your best estimate and category "other"`;
 
 function parseJson<T>(text: string): T {
@@ -87,6 +88,7 @@ export async function analyzeFood(foodName: string): Promise<FoodAnalysis | null
 export type ImageAnalysis = {
   foodName: string;
   category: FoodCategory;
+  texture: Texture;
   allergens: string[];
   notes: string;
 };
@@ -98,7 +100,8 @@ Respond with ONLY a valid JSON object — no explanation, no markdown, no code f
 
 {
   "foodName": "<the primary food name, capitalized, e.g. Sweet potato — always provide your best guess even if uncertain>",
-  "category": "<one of: fruits | vegetables | grains | proteins | dairy | other>",
+  "category": "<one of: fruits | vegetables | grains | proteins | dairy | purees | other>",
+  "texture": "<one of: puree | mashed | soft_chunks | finger_food>",
   "allergens": ["<zero or more of: milk, eggs, fish, shellfish, tree_nuts, peanuts, wheat, soybeans, sesame>"],
   "notes": "<one short sentence describing what you see>"
 }
@@ -106,7 +109,9 @@ Respond with ONLY a valid JSON object — no explanation, no markdown, no code f
 Rules:
 - allergens must only contain IDs from the exact list above
 - foodName should be your best guess at the primary ingredient — only leave empty if absolutely no food is visible at all
-- If reading a label, use the product's main food ingredient as the name`;
+- If reading a label, use the product's main food ingredient as the name
+- category "purees" applies when you see a baby food pouch, jar, or visibly blended multi-ingredient mixture; otherwise pick the underlying ingredient category
+- texture should reflect what the food looks like in the image: "puree" for smooth/blended/pouches/jars, "mashed" for visibly mashed solids, "soft_chunks" for cooked diced cubes, "finger_food" for whole or sliced finger-sized pieces`;
 
 export async function analyzeFoodImage(
   base64: string,

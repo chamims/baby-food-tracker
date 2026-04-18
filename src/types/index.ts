@@ -1,4 +1,4 @@
-export type FoodCategory = 'fruits' | 'vegetables' | 'grains' | 'proteins' | 'dairy' | 'other';
+export type FoodCategory = 'fruits' | 'vegetables' | 'grains' | 'proteins' | 'dairy' | 'purees' | 'other';
 export type Texture = 'puree' | 'mashed' | 'soft_chunks' | 'finger_food';
 export type TimeOfDay = 'morning' | 'midday' | 'afternoon' | 'evening';
 export type AmountEaten = 'none' | 'a_little' | 'half' | 'most' | 'all';
