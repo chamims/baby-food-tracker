@@ -95,12 +95,10 @@ All lookup data (allergens, symptoms, categories, etc.) lives in `src/utils/cons
 - [x] **Chunk 2** (commit `910c2b2`) — Sync UX polish: loading spinner on mount, error toasts via `onSyncError` callback, `importEntries()` replaces the `window.location.reload()` hack, cloud icon (☁️) in Header, Export pulls from in-memory `entries` prop.
 - [x] **Chunk 3** (commits `06ad324` → `420896a`) — Google OAuth via `useAuth` + `SignInView` (magic-link replaced post-ship); `households` + `household_members` tables with RLS gated on membership; `household_id` on `food_entries`; three-branch rendering (loading / sign-in / app) in `App.tsx`; account section + sign-out in `SettingsModal`; `anon_all` policy dropped. Post-ship RLS fixes in `420896a` and `33896b1` resolve a circular policy dep and an infinite-recursion bug.
 
-**Planned (design approved — see [`docs/superpowers/specs/2026-04-16-phase3-chunks-3-and-4-design.md`](docs/superpowers/specs/2026-04-16-phase3-chunks-3-and-4-design.md)):**
-- [ ] **Chunk 4 — Collaboration:** Email invites (owner types invitee email → Edge Function generates 6-char code + emails it via Resend → invitee signs in via Google OAuth → `JoinHouseholdView` redeems code via `redeem_invite(code)` security-definer postgres function). Supabase Realtime subscriptions on `food_entries` for live sync between household members. Members / Invites / Leave-household UI in Settings. Must also add a SECURITY DEFINER function so household-mates can see each other's `household_members` rows (chunk 3 simplified that policy to avoid RLS recursion).
+**Shipped:**
+- [x] **Chunk 4 — Collaboration:** Auto-join invites + realtime sync. Owner adds invitee's Gmail in Settings → `household_invites` row created (no Resend, no code). Invitee signs in with Google → `redeem_pending_invite()` security-definer function auto-adds them to the household. Realtime subscription on `food_entries` via `supabase_realtime` publication gives live insert/update/delete propagation. `leave_household()` handles solo-member (delete), owner-transfer (promote oldest other member), and plain member-leave cases. UI in `SettingsModal`: invite input, pending invites list with revoke, leave-household with confirmation.
 
-**Setup (user, before chunk 4):**
-- Resend account + `RESEND_API_KEY` Edge Function secret (`supabase secrets set RESEND_API_KEY=...`)
-- `APP_URL` secret so the invite email link goes to the right place
+**Notable simplifications vs original design:** no Edge Function, no Resend, no 6-char code, no `JoinHouseholdView`. Google's verified email replaces all of that. See `supabase/migrations/0002_household_invites.sql`.
 
 **Phase 4+ (out of scope):** Multi-baby per household, per-user entry attribution, push notifications, offline queue with retry.
 

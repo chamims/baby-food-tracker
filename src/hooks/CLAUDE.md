@@ -8,8 +8,11 @@ Custom React hooks.
 Single source of truth for all food entry CRUD. Consumed by `App.tsx`.
 
 **Persistence strategy:**
-- When `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` are set → loads from Supabase on mount; writes update localStorage optimistically then sync to Supabase in background.
+- When `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` are set → loads from Supabase on mount; writes update localStorage optimistically then sync to Supabase in background. Subscribes to a Supabase Realtime channel filtered by `household_id` for live insert/update/delete from household-mates (deduped by id against optimistic writes). Clears in-memory + localStorage state when `householdId` goes null so sign-out on a shared browser doesn't leak the prior user's data.
 - Without those env vars → localStorage only (original Phase 1/2 behaviour).
+
+**`useAuth.ts`**
+- Owns session + `householdId`. On first post-sign-in mount with no existing membership, calls `redeem_pending_invite()` before creating a new household — so Gmail users who've been invited by the owner auto-join the owner's household instead of creating a solo one.
 
 **Returned API:**
 

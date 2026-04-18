@@ -10,6 +10,7 @@ import {
   dbUpdateEntry,
   dbDeleteEntry,
   dbUpsertEntries,
+  subscribeFoodEntries,
 } from '../utils/supabase';
 
 function describeSyncError(err: unknown, fallback: string): string {
@@ -59,6 +60,28 @@ export function useFoodEntries(options: UseFoodEntriesOptions = {}) {
         onSyncError?.('Failed to load your data from the cloud');
       })
       .finally(() => setSyncing(false));
+
+    // Realtime: subscribe to inserts/updates/deletes from household-mates.
+    // Dedupe by id vs. our optimistic writes.
+    const unsubscribe = subscribeFoodEntries(householdId, {
+      onInsert: (entry) => setEntries(prev => {
+        if (prev.some(e => e.id === entry.id)) return prev;
+        const next = [...prev, entry];
+        saveEntries(next);
+        return next;
+      }),
+      onUpdate: (entry) => setEntries(prev => {
+        const next = prev.map(e => e.id === entry.id ? entry : e);
+        saveEntries(next);
+        return next;
+      }),
+      onDelete: (id) => setEntries(prev => {
+        const next = prev.filter(e => e.id !== id);
+        saveEntries(next);
+        return next;
+      }),
+    });
+    return unsubscribe;
   }, [householdId, onSyncError]);
 
   const addEntry = useCallback((entry: Omit<FoodEntry, 'id' | 'createdAt'>) => {

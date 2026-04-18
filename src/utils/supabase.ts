@@ -207,6 +207,94 @@ export async function dbGetHousehold(): Promise<{ id: string } | null> {
   return { id: (data as { household_id: string }).household_id };
 }
 
+export async function dbRedeemPendingInvite(): Promise<string | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc('redeem_pending_invite');
+  if (error) throw error;
+  return (data as string | null) ?? null;
+}
+
+export interface HouseholdInvite {
+  id: string;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export async function dbListInvites(householdId: string): Promise<HouseholdInvite[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('household_invites')
+    .select('id, email, created_at, expires_at')
+    .eq('household_id', householdId)
+    .is('redeemed_at', null)
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data as { id: string; email: string; created_at: string; expires_at: string }[]).map(r => ({
+    id: r.id,
+    email: r.email,
+    createdAt: r.created_at,
+    expiresAt: r.expires_at,
+  }));
+}
+
+export async function dbCreateInvite(householdId: string, email: string, createdByUserId: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('household_invites').insert({
+    household_id: householdId,
+    email: email.trim().toLowerCase(),
+    created_by_user_id: createdByUserId,
+  });
+  if (error) throw error;
+}
+
+export async function dbRevokeInvite(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from('household_invites').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function dbLeaveHousehold(): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.rpc('leave_household');
+  if (error) throw error;
+}
+
+export interface RealtimeHandlers {
+  onInsert: (entry: FoodEntry) => void;
+  onUpdate: (entry: FoodEntry) => void;
+  onDelete: (id: string) => void;
+}
+
+export function subscribeFoodEntries(householdId: string, handlers: RealtimeHandlers): () => void {
+  if (!supabase) return () => {};
+  const channel = supabase
+    .channel(`food_entries:${householdId}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'food_entries', filter: `household_id=eq.${householdId}` },
+      (payload) => handlers.onInsert(rowToEntry(payload.new as DbRow))
+    )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'food_entries', filter: `household_id=eq.${householdId}` },
+      (payload) => handlers.onUpdate(rowToEntry(payload.new as DbRow))
+    )
+    .on(
+      'postgres_changes',
+      { event: 'DELETE', schema: 'public', table: 'food_entries', filter: `household_id=eq.${householdId}` },
+      (payload) => {
+        const old = payload.old as { id?: string };
+        if (old?.id) handlers.onDelete(old.id);
+      }
+    )
+    .subscribe();
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
 export async function dbCreateHousehold(userId: string): Promise<string> {
   if (!supabase) throw new Error('Supabase not enabled');
   const { data: household, error: hErr } = await supabase

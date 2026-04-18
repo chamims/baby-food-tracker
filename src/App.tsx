@@ -151,7 +151,10 @@ export default function App() {
               setProfile(updated);
             }}
             userEmail={user?.email}
+            userId={user?.id}
+            householdId={householdId}
             onSignOut={SUPABASE_ENABLED ? signOut : undefined}
+            onAfterLeave={SUPABASE_ENABLED ? signOut : undefined}
           />
 
           {editingEntry && (

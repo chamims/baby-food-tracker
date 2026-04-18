@@ -8,6 +8,7 @@ import {
   onAuthStateChange,
   dbGetHousehold,
   dbCreateHousehold,
+  dbRedeemPendingInvite,
 } from '../utils/supabase';
 
 interface AuthState {
@@ -33,6 +34,13 @@ export function useAuth() {
       const existing = await dbGetHousehold();
       if (existing) {
         setState(prev => ({ ...prev, householdId: existing.id, authReady: true }));
+        return;
+      }
+      // No existing membership: first try to auto-redeem a pending invite
+      // matching the user's verified Google email. If none, create a new solo household.
+      const redeemed = await dbRedeemPendingInvite();
+      if (redeemed) {
+        setState(prev => ({ ...prev, householdId: redeemed, authReady: true }));
         return;
       }
       const id = await dbCreateHousehold(user.id);

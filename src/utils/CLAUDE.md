@@ -54,5 +54,9 @@ Supabase client and typed query helpers. Active only when `VITE_SUPABASE_URL` + 
 | `signInWithGoogle()` | Starts Supabase OAuth redirect to Google; returns user to `window.location.origin` |
 | `signOutFromSupabase()` | Ends current session |
 | `getSession()` / `onAuthStateChange(cb)` | Session readers used by `useAuth` |
+| `dbRedeemPendingInvite()` | RPC → `redeem_pending_invite()`. Auto-joins caller to any household with a pending invite matching their verified Gmail; returns `household_id` or `null` |
+| `dbListInvites(householdId)` / `dbCreateInvite(householdId, email, userId)` / `dbRevokeInvite(id)` | Pending-invite CRUD for the Settings UI |
+| `dbLeaveHousehold()` | RPC → `leave_household()`. Solo member → deletes household; owner with others → transfers ownership to oldest other member; plain member → removes self |
+| `subscribeFoodEntries(householdId, handlers)` | Realtime channel filtered by `household_id=eq.<id>`; fires `onInsert` / `onUpdate` / `onDelete`; returns an unsubscribe fn |
 
 The `DbRow` interface (internal) mirrors `FoodEntry` in snake_case and must stay in sync with the `food_entries` Supabase table schema and `src/types/index.ts`.
