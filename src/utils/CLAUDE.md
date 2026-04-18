@@ -11,7 +11,7 @@ All lookup data the app reads at runtime. **Only file to edit when adding new al
 |--------|------|-------------|
 | `ALLERGENS` | readonly array | 9 major allergens with id, label, emoji |
 | `SYMPTOMS` | readonly array | 10 reaction symptoms |
-| `FOOD_CATEGORIES` | array | 6 categories with id, label, emoji, Tailwind colour class |
+| `FOOD_CATEGORIES` | array | 7 categories with id, label, emoji, Tailwind colour class (includes `purees` for pouches/jars) |
 | `TEXTURES` | array | 4 texture options |
 | `TIMES_OF_DAY` | array | 4 time buckets with emoji |
 | `AMOUNTS` | array | 5 amount levels |
@@ -38,7 +38,7 @@ Google Gemini API helpers. All exports are no-ops / hidden when `AI_ENABLED` is 
 | `AI_ENABLED` | `true` only when `VITE_GOOGLE_AI_API_KEY` is set |
 | `deriveTimeOfDay(hhmm)` | Maps HH:MM string → `TimeOfDay` bucket |
 | `analyzeFood(name)` | Text call to Gemini 1.5 Flash → category, allergens, nutrition |
-| `analyzeFoodImage(base64, mimeType)` | Vision call to Gemini 1.5 Flash → foodName, category, allergens, notes. Two-step fallback: if `foodName` is empty but `notes` has content, a second text call extracts the name. |
+| `analyzeFoodImage(base64, mimeType)` | Vision call to Gemini 1.5 Flash → foodName, category, texture, allergens, notes. Two-step fallback: if `foodName` is empty but `notes` has content, a second text call extracts the name. |
 
 ### `supabase.ts`
 Supabase client and typed query helpers. Active only when `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` are set.

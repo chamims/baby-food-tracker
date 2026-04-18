@@ -40,7 +40,7 @@ All lookup data (allergens, symptoms, categories, etc.) lives in `src/utils/cons
 ### AI (`src/utils/ai.ts`)
 - `AI_ENABLED` — false when `VITE_ANTHROPIC_API_KEY` is absent; all AI UI is hidden
 - `analyzeFood(name)` — text call to Haiku; returns category, allergens, nutrition
-- `analyzeFoodImage(base64, mimeType)` — vision call to Haiku; returns foodName, category, allergens, notes. Has a two-step fallback: if foodName is empty but notes has content, a second text call extracts the name from the description.
+- `analyzeFoodImage(base64, mimeType)` — vision call to Haiku; returns foodName, category, texture, allergens, notes. Has a two-step fallback: if foodName is empty but notes has content, a second text call extracts the name from the description.
 - `deriveTimeOfDay(hhmm)` — maps HH:MM → morning/midday/afternoon/evening
 
 ### Views

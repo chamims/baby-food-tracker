@@ -16,7 +16,7 @@ Components for creating and viewing individual food entries.
 
 Key behaviours:
 - **AI auto-detect** (when `AI_ENABLED`): 800 ms debounce on food name input calls `analyzeFood()` → auto-fills category, allergens, and nutrition.
-- **Photo capture** (when `AI_ENABLED`): camera input calls `analyzeFoodImage()` → auto-fills food name, category, allergens, and shows thumbnail.
+- **Photo capture** (when `AI_ENABLED`): camera input calls `analyzeFoodImage()` → auto-fills food name, category, texture (validated against `TEXTURES`), allergens, and shows thumbnail.
 - Allergens in step 1 are derived from AI analysis; user can always override.
 - `isFirstIntroduction` is computed from the hook and displayed as a badge in step 4.
 
