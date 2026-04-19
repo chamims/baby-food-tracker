@@ -131,6 +131,7 @@ export default function App() {
                   {view === 'stats' && (
                     <StatsView
                       entries={entries}
+                      profile={profile}
                       onImport={handleImport}
                       onSyncToCloud={householdId ? handleSyncToCloud : undefined}
                     />

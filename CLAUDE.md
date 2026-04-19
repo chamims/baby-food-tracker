@@ -48,7 +48,7 @@ All lookup data (allergens, symptoms, categories, etc.) lives in `src/utils/cons
 |------|-----------|---------|
 | Calendar | `CalendarView` | Monthly calendar, emoji food dots per day, day detail panel |
 | History | `FoodHistoryView` | Searchable/filterable list of all entries |
-| Stats | `StatsView` | Enjoyment breakdown, category breakdown, favorites, allergen summary |
+| Stats | `StatsView` | Texture nudge, weekly new-foods + sparkline, enjoyment breakdown, category breakdown, feeding-windows heatmap, favorites, allergen summary |
 
 ### Key Components
 - `AddFoodModal` — 4-step guided form (food name → details → reactions → notes). Includes time picker, AI debounce analysis, photo capture with thumbnail

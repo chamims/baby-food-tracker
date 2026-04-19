@@ -1,16 +1,30 @@
 import { useMemo, useRef, useState } from 'react';
 import type { FoodEntry } from '../../types';
-import { FOOD_CATEGORIES, ENJOYMENT_LEVELS, ALLERGENS } from '../../utils/constants';
+import { FOOD_CATEGORIES, ENJOYMENT_LEVELS, ALLERGENS, TIMES_OF_DAY } from '../../utils/constants';
 import { importData } from '../../utils/storage';
 import { SUPABASE_ENABLED } from '../../utils/supabase';
+import type { BabyProfile } from '../../utils/profile';
 
 interface StatsViewProps {
   entries: FoodEntry[];
+  profile?: BabyProfile;
   onImport: (entries: FoodEntry[]) => void;
   onSyncToCloud?: () => Promise<number>;
 }
 
-export default function StatsView({ entries, onImport, onSyncToCloud }: StatsViewProps) {
+function isoDaysAgo(n: number): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - n);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+const DOW_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+export default function StatsView({ entries, profile, onImport, onSyncToCloud }: StatsViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState('');
 
@@ -63,6 +77,49 @@ export default function StatsView({ entries, onImport, onSyncToCloud }: StatsVie
 
     return { uniqueFoods, reactions, firstIntros, allergenFoods, byCategory, byEnjoyment, topFoods, topFavorites };
   }, [entries]);
+
+  const weeklyNewFoods = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, i) => isoDaysAgo(6 - i));
+    const cutoff = days[0];
+    const dailyCounts = days.map(day => entries.filter(e => e.date === day).length);
+    const newFoodCount = entries.filter(e => e.isFirstIntroduction && e.date >= cutoff).length;
+    const sparkMax = Math.max(1, ...dailyCounts);
+    return { days, dailyCounts, newFoodCount, sparkMax };
+  }, [entries]);
+
+  const heatmap = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, i) => isoDaysAgo(6 - i));
+    const dayOfWeekForCol = days.map(d => new Date(d + 'T00:00:00').getDay());
+    const grid: Record<string, number[]> = {};
+    for (const bucket of TIMES_OF_DAY) grid[bucket.id] = Array(7).fill(0);
+    for (let col = 0; col < 7; col++) {
+      const day = days[col];
+      const dayEntries = entries.filter(e => e.date === day);
+      for (const entry of dayEntries) {
+        if (grid[entry.timeOfDay]) grid[entry.timeOfDay][col] += 1;
+      }
+    }
+    let max = 0;
+    for (const bucket of TIMES_OF_DAY) {
+      for (const c of grid[bucket.id]) if (c > max) max = c;
+    }
+    return { grid, max: Math.max(1, max), dayOfWeekForCol };
+  }, [entries]);
+
+  const textureNudge = useMemo(() => {
+    if (!profile?.dob) return null;
+    const dob = new Date(profile.dob + 'T00:00:00');
+    if (isNaN(dob.getTime())) return null;
+    const ageMonths = (Date.now() - dob.getTime()) / (1000 * 60 * 60 * 24 * 30.44);
+    if (ageMonths < 7) return null;
+    const cutoff = isoDaysAgo(13);
+    const recent = entries.filter(e => e.date >= cutoff);
+    if (recent.length < 5) return null;
+    const soft = recent.filter(e => e.texture === 'puree' || e.texture === 'mashed').length;
+    const softShare = soft / recent.length;
+    if (softShare < 0.8) return null;
+    return { softShare };
+  }, [entries, profile?.dob]);
 
   if (entries.length === 0) {
     return (
@@ -131,6 +188,15 @@ export default function StatsView({ entries, onImport, onSyncToCloud }: StatsVie
 
   return (
     <div className="flex flex-col gap-4">
+      {textureNudge && (
+        <div className="bg-sage-50 dark:bg-sage-900/30 border border-sage-200 dark:border-sage-700 rounded-2xl p-4 shadow-sm">
+          <p className="font-semibold text-sage-700 dark:text-sage-300 mb-1">🍽️ Ready for more texture?</p>
+          <p className="text-sm text-sage-700/90 dark:text-sage-200/90">
+            {Math.round(textureNudge.softShare * 100)}% of the last 14 days have been purée or mashed. Your baby may be ready to try soft chunks or finger foods.
+          </p>
+        </div>
+      )}
+
       {/* Top stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="card text-center">
@@ -148,6 +214,35 @@ export default function StatsView({ entries, onImport, onSyncToCloud }: StatsVie
         <div className="card text-center">
           <p className="text-3xl font-bold text-sage-500">{stats.firstIntros.length}</p>
           <p className="text-sm text-gray-500 dark:text-stone-400 mt-0.5">First introductions</p>
+        </div>
+      </div>
+
+      {/* Weekly new foods + sparkline */}
+      <div className="card">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-3xl font-bold text-sage-600">{weeklyNewFoods.newFoodCount}</p>
+            <p className="text-sm text-gray-500 dark:text-stone-400 mt-0.5">New foods this week</p>
+          </div>
+          <div className="flex-1 max-w-[160px]">
+            <div className="flex items-end gap-1 h-10">
+              {weeklyNewFoods.dailyCounts.map((count, i) => (
+                <div
+                  key={i}
+                  className="flex-1 bg-sage-400 dark:bg-sage-500 rounded-sm"
+                  style={{ height: `${Math.max(6, (count / weeklyNewFoods.sparkMax) * 100)}%`, opacity: count === 0 ? 0.15 : 1 }}
+                  title={`${count} entr${count === 1 ? 'y' : 'ies'}`}
+                />
+              ))}
+            </div>
+            <div className="flex gap-1 mt-1">
+              {weeklyNewFoods.days.map(day => (
+                <div key={day} className="flex-1 text-center text-[10px] text-gray-400 dark:text-stone-500">
+                  {DOW_INITIALS[new Date(day + 'T00:00:00').getDay()]}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -192,6 +287,38 @@ export default function StatsView({ entries, onImport, onSyncToCloud }: StatsVie
           </div>
         </div>
       )}
+
+      {/* Feeding windows heatmap */}
+      <div className="card">
+        <h3 className="font-semibold text-gray-700 dark:text-stone-200 mb-3">Feeding Windows — Last 7 Days</h3>
+        <div className="space-y-1.5">
+          {TIMES_OF_DAY.map(bucket => (
+            <div key={bucket.id} className="flex items-center gap-2">
+              <span className="text-lg w-6 text-center" aria-label={bucket.label}>{bucket.emoji}</span>
+              <div className="flex-1 grid grid-cols-7 gap-1">
+                {heatmap.grid[bucket.id].map((count, col) => (
+                  <div
+                    key={col}
+                    className={`aspect-square rounded-md ${count === 0 ? 'bg-gray-100 dark:bg-stone-700' : 'bg-sage-500'}`}
+                    style={count === 0 ? undefined : { opacity: 0.2 + 0.8 * (count / heatmap.max) }}
+                    title={`${count} ${bucket.label.toLowerCase()} feeding${count === 1 ? '' : 's'}`}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="w-6" />
+            <div className="flex-1 grid grid-cols-7 gap-1">
+              {heatmap.dayOfWeekForCol.map((dow, col) => (
+                <div key={col} className="text-center text-[10px] text-gray-400 dark:text-stone-500">
+                  {DOW_INITIALS[dow]}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Favorites */}
       {stats.topFavorites.length > 0 && (
