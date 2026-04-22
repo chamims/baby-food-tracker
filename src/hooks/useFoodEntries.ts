@@ -132,24 +132,14 @@ export function useFoodEntries(options: UseFoodEntriesOptions = {}) {
     }
   }, [onSyncError]);
 
-  const getEntriesForDate = useCallback((date: string) => {
-    return entries.filter(e => e.date === date);
-  }, [entries]);
-
-  const getEntriesForMonth = useCallback((year: number, month: number) => {
-    const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-    return entries.filter(e => e.date.startsWith(prefix));
-  }, [entries]);
-
-  const getFoodNames = useCallback(() => {
-    const names = new Set(entries.map(e => e.foodName.toLowerCase()));
-    return Array.from(names).sort();
-  }, [entries]);
-
-  const isFirstIntroduction = useCallback((foodName: string, date: string) => {
-    return !entries.some(e =>
-      e.foodName.toLowerCase() === foodName.toLowerCase() && e.date < date
-    );
+  const isFirstIntroduction = useCallback((foodName: string, _date: string) => {
+    // First intro = no other stored entry has this food name (case-insensitive).
+    // For new entries the to-be-saved record isn't in `entries` yet, so any
+    // match means "already tried" — including same-day duplicates.
+    // For edits, AddFoodModal only re-applies this flag when the food name
+    // actually changes, so the self-match on unchanged edits is a non-issue.
+    const needle = foodName.trim().toLowerCase();
+    return !entries.some(e => e.foodName.trim().toLowerCase() === needle);
   }, [entries]);
 
   const recentNewAllergens = useMemo(() => {
@@ -211,9 +201,6 @@ export function useFoodEntries(options: UseFoodEntriesOptions = {}) {
     updateEntry,
     deleteEntry,
     importEntries,
-    getEntriesForDate,
-    getEntriesForMonth,
-    getFoodNames,
     isFirstIntroduction,
     recentNewAllergens,
   };

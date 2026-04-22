@@ -21,7 +21,7 @@ Sticky bottom tab bar with three tabs: Calendar, History, Stats.
 Props: `view: View`, `onViewChange: (view: View) => void`
 
 ### `SettingsModal.tsx`
-Modal for baby profile (name, DOB, solids start date) + household management (invite list, send-invite form, leave-household) + account (sign-out). Household and account sections appear only when Supabase is enabled and the user has a `householdId`.
+Modal for baby profile (name, DOB, solids start date) + household management (invite list, send-invite form, leave-household) + account (sign-out). Household and account sections appear only when Supabase is enabled and the user has a `householdId`. Local form state re-syncs to `initialProfile` every time the modal opens, so edits made elsewhere (or mid-session profile changes) don't leave stale values in the inputs.
 
 Props: `open`, `onClose`, `onSave`, `initialProfile`, `userEmail?`, `userId?`, `householdId?`, `onSignOut?`, `onAfterLeave?`
 

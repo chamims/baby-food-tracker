@@ -375,7 +375,7 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
                     <img
                       src={photoPreviewUrl}
                       alt="Captured food"
-                      className="w-20 h-20 object-cover rounded-xl border border-gray-200"
+                      className="w-20 h-20 object-cover rounded-xl border border-gray-200 dark:border-stone-600"
                     />
                     {photoLoading && (
                       <div className="absolute inset-0 bg-white/70 rounded-xl flex flex-col items-center justify-center gap-1">
@@ -403,7 +403,7 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-stone-200 mb-1.5">
                   Food category
                   {aiSuggestedCategory && (
                     <span className="chip bg-sage-100 text-sage-600 font-normal">✨ AI suggested</span>
@@ -426,7 +426,7 @@ export default function AddFoodModal({ date, onClose, onSave, isFirstIntroductio
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-stone-200 mb-1.5">
                   Contains allergens?
                   {aiSuggestedAllergens && (
                     <span className="chip bg-sage-100 text-sage-600 font-normal">✨ AI suggested</span>

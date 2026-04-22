@@ -57,6 +57,17 @@ export default function SettingsModal({
     }
   }, [open, householdId, loadInvites]);
 
+  // Re-sync local form state when the modal opens so edits from another client
+  // or a prior save in this session don't leave the fields showing stale values.
+  useEffect(() => {
+    if (!open) return;
+    setName(initialProfile.babyName);
+    setDob(initialProfile.dob ?? '');
+    setStartDate(initialProfile.startDate ?? '');
+    setConfirmingLeave(false);
+    setInviteError('');
+  }, [open, initialProfile]);
+
   if (!open) return null;
 
   const handleSave = () => {

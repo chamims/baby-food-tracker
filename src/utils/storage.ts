@@ -20,17 +20,6 @@ export function saveEntries(entries: FoodEntry[]): void {
   }
 }
 
-export function exportData(): void {
-  const entries = loadEntries();
-  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `baby-food-tracker-${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export function importData(file: File): Promise<FoodEntry[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

@@ -24,10 +24,7 @@ Single source of truth for all food entry CRUD. Consumed by `App.tsx`.
 | `updateEntry(id, updates)` | Merges partial updates locally + async-syncs to Supabase |
 | `deleteEntry(id)` | Removes by id locally + async-deletes from Supabase |
 | `importEntries(imported)` | Dedupes by id and merges; bulk-upserts to Supabase when signed in |
-| `getEntriesForDate(date)` | Filter by YYYY-MM-DD |
-| `getEntriesForMonth(year, month)` | Filter by year/month (0-indexed month) |
-| `getFoodNames()` | Sorted unique food names (lowercase) |
-| `isFirstIntroduction(foodName, date)` | `true` if no earlier entry has the same food name |
+| `isFirstIntroduction(foodName, _date)` | `true` if no other stored entry has the same food name (case-insensitive). Second argument is accepted for API stability but unused — correctness comes from the new entry not yet being in `entries`, and edit-mode skipping re-evaluation unless the name changed. |
 | `recentNewAllergens` | Memoized list of allergens first introduced in the last 5 days, with human-readable wait-until windows for the history-view reminder cards |
 
 ## Notes

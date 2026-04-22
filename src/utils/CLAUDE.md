@@ -25,10 +25,9 @@ localStorage helpers.
 |--------|-------------|
 | `loadEntries()` | Parse `FoodEntry[]` from localStorage; returns `[]` on error |
 | `saveEntries(entries)` | Stringify and write to localStorage |
-| `exportData()` | Download all entries as a JSON file |
-| `importData(file)` | Parse uploaded JSON file into `FoodEntry[]` |
+| `importData(file)` | Parse and validate uploaded JSON file into `FoodEntry[]` |
 
-`importData(file)` parses + validates uploads; `exportData()` is superseded by StatsView's inline export (which serializes from the in-memory `entries` prop, so cloud-synced data is included).
+Export-to-JSON lives inline in `StatsView` (`handleExport`) so it serializes the in-memory `entries` prop — that way cloud-synced data is included without another round-trip through localStorage.
 
 ### `ai.ts`
 Anthropic Claude API helpers (via `@anthropic-ai/sdk` with `dangerouslyAllowBrowser: true`). All exports are no-ops / hidden when `AI_ENABLED` is `false`.
